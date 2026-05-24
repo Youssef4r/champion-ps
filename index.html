@@ -138,43 +138,21 @@
             padding: 8px;
             border-radius: 40px;
         }
-        .shift-item {
-            background: #f8f9fa;
-            border-radius: 20px;
-            padding: 12px;
-            margin: 8px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+        .badge-delivered {
+            background: #2a9d8f;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            display: inline-block;
         }
-        .time-input-group {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            background: white;
-            padding: 5px 12px;
-            border-radius: 60px;
-            border: 1px solid #ddd;
-        }
-        .time-input-group input {
-            width: 70px;
-            text-align: center;
-            padding: 8px 5px;
-        }
-        .time-input-group select {
-            width: 80px;
-            padding: 8px 5px;
-        }
-        .countdown-timer {
-            background: #1a2a32;
-            color: #f4a261;
-            padding: 10px 15px;
-            border-radius: 40px;
-            font-weight: bold;
-            margin-top: 15px;
-            text-align: center;
+        .badge-pending {
+            background: #e76f51;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            display: inline-block;
         }
         @media (max-width:700px){ .site-header { flex-direction: column; text-align: center; } }
     </style>
@@ -204,93 +182,12 @@
     let employees = [];
     let orders = [];
     let currentUser = null;
-    let countdownInterval = null;
     
     const SUPER_ADMIN = { id: "super1", fullName: "المدير العام", username: "admin", password: "admin2025" };
     
-    // ========== دوال الوقت المصححة ==========
-    // تحويل (ساعة، دقيقة، ص/م) إلى عدد الدقائق من منتصف الليل (0-1439)
-    function convertToMinutes(hour, minute, ampm) {
-        let h = parseInt(hour);
-        let m = parseInt(minute) || 0;
-        
-        // التحويل من 12 ساعة إلى 24 ساعة
-        if (ampm === 'م' && h !== 12) h += 12;
-        if (ampm === 'ص' && h === 12) h = 0;
-        
-        return (h * 60) + m;
-    }
-    
-    // تحويل النص "HH:MM" إلى عدد الدقائق
-    function timeStringToMinutes(timeStr) {
-        let parts = timeStr.split(':');
-        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
-    }
-    
-    // تحويل عدد الدقائق إلى نص بصيغة 12 ساعة (مثال: 4:30 م)
-    function minutesTo12HourFormat(minutes) {
-        let h = Math.floor(minutes / 60);
-        let m = minutes % 60;
-        let ampm = h >= 12 ? 'م' : 'ص';
-        let hour12 = h % 12;
-        if (hour12 === 0) hour12 = 12;
-        return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
-    }
-    
-    // إنشاء وقت بالتنسيق 24 ساعة للتخزين
-    function createTime24(hour, minute, ampm) {
-        let h = parseInt(hour);
-        if (ampm === 'م' && h !== 12) h += 12;
-        if (ampm === 'ص' && h === 12) h = 0;
-        return `${h.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-    }
-    
-    // الحصول على الدقائق الحالية (الآن)
-    function getCurrentMinutes() {
-        const now = new Date();
-        return now.getHours() * 60 + now.getMinutes();
-    }
-    
-    // التحقق من نشاط الشفت (بالمقارنة بالدقائق)
-    function isShiftActive(shift) {
-        const nowMinutes = getCurrentMinutes();
-        const shiftDate = new Date(shift.date);
-        const today = new Date();
-        
-        // نفس التاريخ؟
-        if (shiftDate.toDateString() !== today.toDateString()) return false;
-        
-        const startMinutes = timeStringToMinutes(shift.startTime);
-        const endMinutes = timeStringToMinutes(shift.endTime);
-        
-        return nowMinutes >= startMinutes && nowMinutes <= endMinutes;
-    }
-    
-    // حساب الوقت المتبقي
-    function getRemainingTime(endTime24) {
-        const nowMinutes = getCurrentMinutes();
-        const endMinutes = timeStringToMinutes(endTime24);
-        
-        if (nowMinutes >= endMinutes) return "انتهى الشفت";
-        
-        let diffMinutes = endMinutes - nowMinutes;
-        let hours = Math.floor(diffMinutes / 60);
-        let minutes = diffMinutes % 60;
-        return `${hours} ساعة و ${minutes} دقيقة`;
-    }
-    
-    // إيجاد الموظف والشفت النشط
-    function getActiveEmployeeAndShift() {
-        for (let emp of employees) {
-            const activeShift = emp.shifts?.find(sh => isShiftActive(sh));
-            if (activeShift) return { employee: emp, shift: activeShift };
-        }
-        return { employee: null, shift: null };
-    }
-    
     // ---------- تحميل وحفظ البيانات ----------
     function loadData() {
-        const storedProducts = localStorage.getItem("champion_products");
+        const storedProducts = localStorage.getItem("champion_products_new");
         if (storedProducts) products = JSON.parse(storedProducts);
         else {
             products = [
@@ -305,22 +202,22 @@
             ];
         }
         
-        const storedAdmins = localStorage.getItem("champion_admins");
+        const storedAdmins = localStorage.getItem("champion_admins_new");
         admins = storedAdmins ? JSON.parse(storedAdmins) : [SUPER_ADMIN];
         
-        const storedEmps = localStorage.getItem("champion_employees");
+        const storedEmps = localStorage.getItem("champion_employees_new");
         if (storedEmps) employees = JSON.parse(storedEmps);
         else {
             employees = [
-                { id: "emp1", fullName: "أحمد علي", username: "ahmed", password: "123", shifts: [] },
-                { id: "emp2", fullName: "سارة خالد", username: "sara", password: "123", shifts: [] }
+                { id: "emp1", fullName: "أحمد علي", username: "ahmed", password: "123" },
+                { id: "emp2", fullName: "سارة خالد", username: "sara", password: "123" }
             ];
         }
         
-        const storedOrders = localStorage.getItem("champion_orders");
+        const storedOrders = localStorage.getItem("champion_orders_new");
         orders = storedOrders ? JSON.parse(storedOrders) : [];
         
-        const savedUser = localStorage.getItem("champion_currentUser");
+        const savedUser = localStorage.getItem("champion_currentUser_new");
         if (savedUser) {
             const userData = JSON.parse(savedUser);
             if (userData.type === "admin") {
@@ -332,12 +229,12 @@
     }
     
     function saveData() {
-        localStorage.setItem("champion_products", JSON.stringify(products));
-        localStorage.setItem("champion_admins", JSON.stringify(admins));
-        localStorage.setItem("champion_employees", JSON.stringify(employees));
-        localStorage.setItem("champion_orders", JSON.stringify(orders));
-        if (currentUser) localStorage.setItem("champion_currentUser", JSON.stringify(currentUser));
-        else localStorage.removeItem("champion_currentUser");
+        localStorage.setItem("champion_products_new", JSON.stringify(products));
+        localStorage.setItem("champion_admins_new", JSON.stringify(admins));
+        localStorage.setItem("champion_employees_new", JSON.stringify(employees));
+        localStorage.setItem("champion_orders_new", JSON.stringify(orders));
+        if (currentUser) localStorage.setItem("champion_currentUser_new", JSON.stringify(currentUser));
+        else localStorage.removeItem("champion_currentUser_new");
     }
     
     // صوت الإشعار
@@ -375,34 +272,36 @@
         const unitPrice = product.price + extra;
         const totalPrice = unitPrice * quantity;
         
-        const { employee, shift } = getActiveEmployeeAndShift();
-        
         const newOrder = {
             id: "ord_" + Date.now(),
             productId, productName: product.name,
             optionsText: optionsText.join(" | "),
             quantity, totalPrice, customerName, roomName,
             status: "pending",
-            assignedToEmpId: employee ? employee.id : null,
-            shiftId: shift ? shift.id : null,
+            deliveredBy: null,
+            deliveredAt: null,
             createdAt: new Date().toLocaleString('ar-EG'),
             timestamp: Date.now()
         };
         orders.unshift(newOrder);
-        if (shift) { if (!shift.orderIds) shift.orderIds = []; shift.orderIds.push(newOrder.id); }
         saveData();
         playSound();
         alert(`✅ تم الطلب! الإجمالي: ${totalPrice} ج.م`);
         return true;
     }
     
-    function deliverOrder(orderId) {
+    // استلام الطلب (أي موظف)
+    function receiveOrder(orderId, employeeName) {
         const order = orders.find(o => o.id === orderId);
-        if (!order || order.status === "delivered") return;
+        if (!order || order.status === "delivered") return false;
+        
         order.status = "delivered";
+        order.deliveredBy = employeeName;
+        order.deliveredAt = new Date().toLocaleString('ar-EG');
         saveData();
-        alert("✅ تم تسليم الطلب");
+        alert(`✅ تم استلام الطلب بواسطة: ${employeeName}`);
         renderUI();
+        return true;
     }
     
     // دوال الإدارة
@@ -420,23 +319,8 @@
     function deleteProduct(productId) { products = products.filter(p => p.id !== productId); saveData(); renderUI(); }
     function addAdmin(fullName, username, password) { admins.push({ id: "a" + Date.now(), fullName, username, password }); saveData(); renderUI(); }
     function deleteAdmin(id) { if (admins.find(a => a.id === id)?.username === "admin") { alert("لا يمكن حذف المدير الأساسي"); return; } admins = admins.filter(a => a.id !== id); saveData(); renderUI(); }
-    function addEmployee(fullName, username, password) { employees.push({ id: "e" + Date.now(), fullName, username, password, shifts: [] }); saveData(); renderUI(); }
+    function addEmployee(fullName, username, password) { employees.push({ id: "e" + Date.now(), fullName, username, password }); saveData(); renderUI(); }
     function deleteEmployee(id) { employees = employees.filter(e => e.id !== id); saveData(); renderUI(); }
-    
-    function addShift(empId, date, startTime24, endTime24) {
-        const emp = employees.find(e => e.id === empId);
-        if (emp) { 
-            emp.shifts.push({ id: "sh" + Date.now(), date, startTime: startTime24, endTime: endTime24, orderIds: [] }); 
-            saveData(); 
-            renderUI(); 
-            alert("✅ تم إنشاء الشفت");
-        }
-    }
-    
-    function deleteShift(empId, shiftId) {
-        const emp = employees.find(e => e.id === empId);
-        if (emp) { emp.shifts = emp.shifts.filter(s => s.id !== shiftId); saveData(); renderUI(); }
-    }
     
     // تسجيل الدخول
     function login(username, password) {
@@ -447,7 +331,7 @@
         return false;
     }
     
-    function logout() { currentUser = null; localStorage.removeItem("champion_currentUser"); if(countdownInterval) clearInterval(countdownInterval); renderUI(); }
+    function logout() { currentUser = null; localStorage.removeItem("champion_currentUser_new"); renderUI(); }
     
     function showLoginPage() {
         document.getElementById("mainContent").innerHTML = `
@@ -479,7 +363,7 @@
         if (currentUser?.type === "admin") {
             adminDiv.style.display = "flex";
             adminDiv.innerHTML = `<button class="tab-btn" data-tab="products">📦 المنتجات</button>
-                <button class="tab-btn" data-tab="employees">👥 الموظفين والشفتات</button>
+                <button class="tab-btn" data-tab="employees">👥 الموظفين</button>
                 <button class="tab-btn" data-tab="admins">👑 إدارة المديرين</button>
                 <button class="tab-btn" data-tab="allorders">📊 الطلبات الجديدة</button>
                 <button class="tab-btn" data-tab="orderslog">📜 سجل الطلبات</button>`;
@@ -488,10 +372,10 @@
             renderAdminPanel(active);
         } else if (currentUser?.type === "employee") {
             empDiv.style.display = "flex";
-            empDiv.innerHTML = `<button class="tab-btn" data-tab="myorders">📋 طلبات شفتي</button>
-                <button class="tab-btn" data-tab="empLog">📜 سجل طلباتي</button>`;
+            empDiv.innerHTML = `<button class="tab-btn" data-tab="allorders">📋 استلام الطلبات</button>
+                <button class="tab-btn" data-tab="empLog">📜 سجل استلاماتي</button>`;
             attachEmployeeTabs();
-            renderEmployeePanel("myorders");
+            renderEmployeePanel("allorders");
         } else {
             renderCustomerMenu();
         }
@@ -548,77 +432,54 @@
             renderProductsList();
         }
         else if (tab === "employees") {
-            let html = `<div class="admin-panel"><h3>➕ إضافة موظف</h3>
-                <div class="row-flex"><input id="empFull" placeholder="الاسم"><input id="empUser" placeholder="اسم المستخدم"><input id="empPass" placeholder="كلمة المرور"><button onclick="window.addEmpUI()">إضافة</button></div><hr>`;
+            let html = `<div class="admin-panel"><h3>➕ إضافة موظف جديد</h3>
+                <div class="row-flex"><input id="empFull" placeholder="الاسم الكامل"><input id="empUser" placeholder="اسم المستخدم"><input id="empPass" placeholder="كلمة المرور"><button onclick="window.addEmpUI()">إضافة</button></div><hr><h3>👥 قائمة الموظفين</h3>`;
             employees.forEach(emp => {
-                html += `<div style="background:#faf7f2; border-radius:28px; padding:15px; margin-bottom:15px;">
-                    <b>👤 ${emp.fullName}</b> <button class="danger" onclick="window.delEmpUI('${emp.id}')">حذف</button>
-                    <div class="row-flex" style="margin-top:12px;">
-                        <input type="date" id="date_${emp.id}" value="${new Date().toISOString().slice(0,10)}" style="width:auto;">
-                        <div class="time-input-group">
-                            <input type="number" id="startHour_${emp.id}" placeholder="1" min="1" max="12" style="width:60px;" value="1">
-                            <select id="startAmpm_${emp.id}" style="width:70px;"><option value="ص">ص</option><option value="م">م</option></select>
-                            <span>:</span>
-                            <input type="number" id="startMin_${emp.id}" placeholder="00" min="0" max="59" style="width:60px;" value="00">
-                        </div>
-                        <span>إلى</span>
-                        <div class="time-input-group">
-                            <input type="number" id="endHour_${emp.id}" placeholder="4" min="1" max="12" style="width:60px;" value="4">
-                            <select id="endAmpm_${emp.id}" style="width:70px;"><option value="ص">ص</option><option value="م" selected>م</option></select>
-                            <span>:</span>
-                            <input type="number" id="endMin_${emp.id}" placeholder="00" min="0" max="59" style="width:60px;" value="00">
-                        </div>
-                        <button onclick="window.addShiftUI('${emp.id}')">➕ إنشاء شفت</button>
-                    </div>
-                    <div><strong>📅 الشفتات:</strong></div>
-                    <div id="shiftsList_${emp.id}">`;
-                emp.shifts.forEach(shift => {
-                    html += `<div class="shift-item">
-                        <span>📅 ${shift.date} | 🕐 ${minutesTo12HourFormat(timeStringToMinutes(shift.startTime))} → ${minutesTo12HourFormat(timeStringToMinutes(shift.endTime))}</span>
-                        <div><button class="danger" onclick="window.delShiftUI('${emp.id}','${shift.id}')">🗑️ حذف</button></div>
-                    </div>`;
-                });
-                html += `</div></div>`;
+                html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#faf7f2; padding:12px 20px; border-radius:40px; margin-bottom:10px;">
+                    <span><i class="fas fa-user"></i> ${emp.fullName} (${emp.username})</span>
+                    <button class="danger" onclick="window.delEmpUI('${emp.id}')">حذف</button>
+                </div>`;
             });
             html += `</div>`;
             main.innerHTML = html;
             
             window.addEmpUI = () => { let n=document.getElementById("empFull").value,u=document.getElementById("empUser").value,p=document.getElementById("empPass").value; if(n&&u&&p) addEmployee(n,u,p); else alert("املأ جميع الحقول"); };
             window.delEmpUI = (id) => { if(confirm("حذف الموظف؟")) deleteEmployee(id); };
-            window.addShiftUI = (id) => { 
-                let date = document.getElementById(`date_${id}`).value;
-                let startHour = document.getElementById(`startHour_${id}`).value;
-                let startAmpm = document.getElementById(`startAmpm_${id}`).value;
-                let startMin = document.getElementById(`startMin_${id}`).value || "00";
-                let endHour = document.getElementById(`endHour_${id}`).value;
-                let endAmpm = document.getElementById(`endAmpm_${id}`).value;
-                let endMin = document.getElementById(`endMin_${id}`).value || "00";
-                
-                if (!date || !startHour || !endHour) { alert("أدخل التاريخ والوقت"); return; }
-                let startTime24 = createTime24(startHour, startMin, startAmpm);
-                let endTime24 = createTime24(endHour, endMin, endAmpm);
-                addShift(id, date, startTime24, endTime24);
-            };
-            window.delShiftUI = (eId, sId) => { if(confirm("حذف الشفت؟")) deleteShift(eId, sId); };
         }
         else if (tab === "admins") {
             let html = `<div class="admin-panel"><h3>👑 إضافة مدير جديد</h3>
                 <div class="row-flex"><input id="adminFull" placeholder="الاسم"><input id="adminUser" placeholder="اسم المستخدم"><input id="adminPass" placeholder="كلمة المرور"><button onclick="window.addAdminUI()">إضافة</button></div><hr><h3>قائمة المديرين</h3>`;
-            admins.forEach(ad => { html += `<div style="display:flex; justify-content:space-between; background:#f0f3f5; padding:12px 20px; border-radius:40px; margin-bottom:8px;"><span>👑 ${ad.fullName}</span> ${ad.username !== "admin" ? `<button class="danger" onclick="window.delAdminUI('${ad.id}')">حذف</button>` : "<span style='color:green;'>مدير أساسي</span>"}</div>`; });
+            admins.forEach(ad => { html += `<div style="display:flex; justify-content:space-between; background:#f0f3f5; padding:12px 20px; border-radius:40px; margin-bottom:8px;"><span>👑 ${ad.fullName} (${ad.username})</span> ${ad.username !== "admin" ? `<button class="danger" onclick="window.delAdminUI('${ad.id}')">حذف</button>` : "<span style='color:green;'>مدير أساسي</span>"}</div>`; });
             main.innerHTML = html;
             window.addAdminUI = () => { let n=document.getElementById("adminFull").value,u=document.getElementById("adminUser").value,p=document.getElementById("adminPass").value; if(n&&u&&p) addAdmin(n,u,p); else alert("املأ جميع الحقول"); };
             window.delAdminUI = (id) => deleteAdmin(id);
         }
         else if (tab === "allorders") {
             let pending = orders.filter(o => o.status === "pending");
-            let html = `<div class="admin-panel"><h3>🆕 الطلبات الجديدة</h3>`;
+            let html = `<div class="admin-panel"><h3>🆕 الطلبات الجديدة (غير مستلمة)</h3>`;
             if(pending.length===0) html+=`<p>لا توجد طلبات جديدة</p>`;
-            pending.forEach(o => { html += `<div class="order-item"><b>${o.productName}</b><br>خيارات: ${o.optionsText}<br>الكمية: ${o.quantity} | الإجمالي: ${o.totalPrice} ج.م<br>العميل: ${o.customerName} | روم: ${o.roomName}<br>الموظف: ${employees.find(e=>e.id===o.assignedToEmpId)?.fullName || "لم يسند بعد"}</div>`; });
+            pending.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>${o.productName}</b><br>
+                    خيارات: ${o.optionsText}<br>
+                    الكمية: ${o.quantity} | الإجمالي: ${o.totalPrice} ج.م<br>
+                    العميل: ${o.customerName} | روم: ${o.roomName}<br>
+                    وقت الطلب: ${o.createdAt}
+                </div>`; 
+            });
             main.innerHTML = html;
         }
         else if (tab === "orderslog") {
             let html = `<div class="admin-panel"><h3>📜 سجل جميع الطلبات</h3>`;
-            orders.forEach(o => { html += `<div class="order-item"><b>${o.productName}</b> (${o.optionsText}) | ${o.totalPrice} ج.م | ${o.customerName} | ${o.status === "pending" ? "🟡" : "✅"} | ${o.createdAt}</div>`; });
+            orders.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>${o.productName}</b> (${o.optionsText}) | ${o.totalPrice} ج.م<br>
+                    العميل: ${o.customerName}<br>
+                    <span class="${o.status === "pending" ? 'badge-pending' : 'badge-delivered'}">${o.status === "pending" ? '🟡 لم يستلم بعد' : '✅ تم الاستلام'}</span><br>
+                    ${o.status === "delivered" ? `📌 استلم بواسطة: ${o.deliveredBy} في ${o.deliveredAt}` : ''}
+                    الوقت: ${o.createdAt}
+                </div>`; 
+            });
             main.innerHTML = html;
         }
     }
@@ -682,41 +543,49 @@
         buildEditPage();
     }
     
+    // واجهة الموظف - استلام الطلبات
     function renderEmployeePanel(tab) {
-        const empId = currentUser.id;
         const main = document.getElementById("mainContent");
-        if (tab === "myorders") {
-            const emp = employees.find(e => e.id === empId);
-            const activeShift = emp?.shifts.find(sh => isShiftActive(sh));
-            let remainingTime = "";
-            if (activeShift) {
-                remainingTime = getRemainingTime(activeShift.endTime);
-                if (countdownInterval) clearInterval(countdownInterval);
-                countdownInterval = setInterval(() => {
-                    const newRemaining = getRemainingTime(activeShift.endTime);
-                    const timerDiv = document.getElementById("countdownTimer");
-                    if (timerDiv) timerDiv.innerText = `⏰ الوقت المتبقي: ${newRemaining}`;
-                    if (newRemaining === "انتهى الشفت") { clearInterval(countdownInterval); renderEmployeePanel("myorders"); }
-                }, 60000);
-            }
-            let myOrders = orders.filter(o => o.assignedToEmpId === empId && o.status === "pending");
-            let shiftText = activeShift ? `${minutesTo12HourFormat(timeStringToMinutes(activeShift.startTime))} → ${minutesTo12HourFormat(timeStringToMinutes(activeShift.endTime))}` : "لا يوجد شفت نشط";
-            let html = `<div class="employee-panel"><h3>📋 طلبات شفتي <button onclick="playSound()" style="margin-right:15px;">🔔 اختبار الصوت</button></h3><div class="countdown-timer" id="countdownTimer">⏰ وقت الشفت: ${shiftText} | المتبقي: ${remainingTime || "لا يوجد"}</div>`;
-            if (myOrders.length === 0) html += `<p>✨ لا توجد طلبات معلقة</p>`;
-            myOrders.forEach(o => { html += `<div class="order-item"><b>${o.productName}</b><br>خيارات: ${o.optionsText}<br>الكمية: ${o.quantity} | الإجمالي: ${o.totalPrice} ج.م<br>العميل: ${o.customerName} | روم: ${o.roomName}<br><button class="success" onclick="window.deliverOrderUI('${o.id}')">✅ تسليم</button></div>`; });
+        
+        if (tab === "allorders") {
+            let pendingOrders = orders.filter(o => o.status === "pending");
+            let html = `<div class="employee-panel">
+                <h3>📋 الطلبات الجديدة - اختر طلباً لاستلامه</h3>
+                <button onclick="playSound()" style="margin-bottom:15px;">🔔 اختبار الصوت</button>`;
+            if (pendingOrders.length === 0) html += `<p>✨ لا توجد طلبات جديدة حالياً</p>`;
+            pendingOrders.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>🍔 ${o.productName}</b><br>
+                    خيارات: ${o.optionsText}<br>
+                    الكمية: ${o.quantity} | الإجمالي: ${o.totalPrice} ج.م<br>
+                    👤 العميل: ${o.customerName} | 🏠 الروم: ${o.roomName}<br>
+                    🕐 وقت الطلب: ${o.createdAt}<br>
+                    <button class="success" onclick="window.receiveOrderFromUI('${o.id}')" style="margin-top:10px;">✅ استلام الطلب</button>
+                </div>`; 
+            });
             main.innerHTML = html;
-            window.deliverOrderUI = (id) => { deliverOrder(id); renderEmployeePanel("myorders"); };
-        } else if (tab === "empLog") {
-            if (countdownInterval) clearInterval(countdownInterval);
-            let myOrders = orders.filter(o => o.assignedToEmpId === empId);
-            let html = `<div class="employee-panel"><h3>📜 سجل طلباتي</h3>`;
-            myOrders.forEach(o => { html += `<div class="order-item"><b>${o.productName}</b> (${o.optionsText}) | ${o.totalPrice} ج.م | ${o.status === "pending" ? "🟡" : "✅"} | ${o.createdAt}</div>`; });
+            window.receiveOrderFromUI = (orderId) => {
+                if (confirm(`تأكيد استلام هذا الطلب بواسطة ${currentUser.fullName}؟`)) {
+                    receiveOrder(orderId, currentUser.fullName);
+                }
+            };
+        } 
+        else if (tab === "empLog") {
+            let myReceived = orders.filter(o => o.deliveredBy === currentUser.fullName);
+            let html = `<div class="employee-panel"><h3>📜 سجل استلاماتي</h3>`;
+            if (myReceived.length === 0) html += `<p>لم تستلم أي طلبات حتى الآن</p>`;
+            myReceived.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>${o.productName}</b> (${o.optionsText}) | ${o.totalPrice} ج.م<br>
+                    العميل: ${o.customerName} | روم: ${o.roomName}<br>
+                    تم الاستلام في: ${o.deliveredAt}
+                </div>`; 
+            });
             main.innerHTML = html;
         }
     }
     
     function renderCustomerMenu() {
-        if (countdownInterval) clearInterval(countdownInterval);
         const main = document.getElementById("mainContent");
         let html = `<h2>🎮 القائمة الرئيسية</h2><div class="products-grid">`;
         products.forEach(prod => {
