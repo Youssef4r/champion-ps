@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Champion - نظام إدارة الطلبات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Cairo', 'Tahoma', sans-serif; }
+        body { background: #eef2f7; min-height: 100vh; }
+        .site-header {
+            background: #1a2a32;
+            padding: 12px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-icon { background: #f4a261; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; color: #1e2a3e; }
+        .site-title h1 { color: #fefae0; font-size: 1.5rem; }
+        .site-title p { color: #f4a261; font-size: 0.75rem; }
+        .auth-section {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            background: #2e4a5c;
+            padding: 6px 20px;
+            border-radius: 50px;
+        }
+        .user-greeting { color: white; font-weight: bold; }
+        .login-btn, .logout-btn { background: #f4a261; border: none; padding: 6px 18px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        .logout-btn { background: #e76f51; color: white; }
+        .admin-tabs, .employee-tabs {
+            background: white;
+            display: flex;
+            gap: 12px;
+            padding: 12px 25px;
+            margin: 20px 30px 0 30px;
+            border-radius: 60px;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .tab-btn { background: #e9ecef; border: none; padding: 8px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .tab-btn.active { background: #1a2a32; color: #f4a261; }
+        .main-container { padding: 30px; max-width: 1400px; margin: 0 auto; }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 28px;
+            margin-top: 25px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 12px 20px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .product-card:hover { transform: translateY(-5px); }
+        .product-img { height: 180px; background: #f1f3f5; display: flex; align-items: center; justify-content: center; }
+        .product-img img { width: 100%; height: 100%; object-fit: cover; }
+        .product-details { padding: 18px; }
+        .product-name { font-size: 1.2rem; font-weight: bold; }
+        .product-price { color: #f4a261; margin: 8px 0; }
+        .order-now-btn, .edit-product-btn { background: #2a9d8f; color: white; width: 100%; padding: 8px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .edit-product-btn { background: #f4a261; }
+        .order-page, .admin-panel, .employee-panel, .login-page, .edit-product-page {
+            background: white;
+            border-radius: 42px;
+            padding: 30px;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+        }
+        .order-page, .edit-product-page { max-width: 800px; margin: 0 auto; }
+        .option-group {
+            background: #f8f9fa;
+            border-radius: 28px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #e9ecef;
+        }
+        .option-title { font-weight: bold; margin-bottom: 12px; font-size: 1.1rem; }
+        .option-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+        .option-choice {
+            background: #e9ecef;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .option-choice.selected { background: #f4a261; color: white; }
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 60px;
+            margin: 20px 0;
+        }
+        .qty-btn { background: #1a2a32; color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; border: none; cursor: pointer; }
+        .row-flex { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 15px; align-items: center; }
+        input, select { padding: 10px 18px; border-radius: 40px; border: 1px solid #ddd; width: 100%; }
+        button { cursor: pointer; font-weight: bold; }
+        button.danger { background: #e76f51; color: white; }
+        button.success { background: #2a9d8f; color: white; }
+        button.warning { background: #f4a261; color: white; }
+        .order-item {
+            background: #fef9f0;
+            border-radius: 24px;
+            padding: 18px;
+            margin-bottom: 15px;
+            border-right: 6px solid #f4a261;
+        }
+        .options-builder {
+            background: #f1f3f5;
+            border-radius: 28px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .option-card {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #dee2e6;
+        }
+        .choice-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 40px;
+        }
+        .shift-item {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 12px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .time-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: white;
+            padding: 5px 12px;
+            border-radius: 60px;
+            border: 1px solid #ddd;
+        }
+        .time-input-group input {
+            width: 70px;
+            text-align: center;
+            padding: 8px 5px;
+        }
+        .time-input-group select {
+            width: 80px;
+            padding: 8px 5px;
+        }
+        .countdown-timer {
+            background: #1a2a32;
+            color: #f4a261;
+            padding: 10px 15px;
+            border-radius: 40px;
+            font-weight: bold;
+            margin-top: 15px;
+            text-align: center;
+        }
+        @media (max-width:700px){ .site-header { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+<div class="site-header">
+    <div class="logo-area">
+        <div class="logo-icon"><i class="fas fa-gamepad"></i></div>
+        <div class="site-title">
+            <h1>🏆 Champion</h1>
+            <p>نظام إدارة الطلبات المتكامل</p>
+        </div>
+    </div>
+    <div class="auth-section" id="authWidget">
+        <span class="user-greeting" id="userGreeting">زائر</span>
+        <button id="authButton" class="login-btn">تسجيل الدخول</button>
+    </div>
+</div>
+<div id="adminTabsContainer" style="display: none;" class="admin-tabs"></div>
+<div id="employeeTabsContainer" style="display: none;" class="employee-tabs"></div>
+<div class="main-container" id="mainContent"></div>
+
+<script>
+    // ---------- البيانات الأساسية (بتتحفظ في localStorage) ----------
+    let products = [];
+    let admins = [];
+    let employees = [];
+    let orders = [];
+    let currentUser = null;
+    let countdownInterval = null;
+    
+    // الأدمن الأساسي
+    const SUPER_ADMIN = { id: "super1", fullName: "المدير العام", username: "admin", password: "admin2025" };
+    
+    // ---------- دوال تحويل الوقت ----------
+    function convertTo24Hour(hour, minute, ampm) {
+        let h = parseInt(hour);
+        if (ampm === 'م' && h !== 12) h += 12;
+        if (ampm === 'ص' && h === 12) h = 0;
+        return h * 60 + minute;
+    }
+    
+    function timeStringToDecimal(timeStr) {
+        let parts = timeStr.split(':');
+        return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+    }
+    
+    function formatTimeTo24(hour, minute, ampm) {
+        let h = convertTo24Hour(hour, minute, ampm);
+        let hours24 = Math.floor(h / 60);
+        let mins = h % 60;
+        return `${hours24.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    }
+    
+    // تحويل من 24 ساعة إلى 12 ساعة للعرض
+    function formatTo12Hour(time24) {
+        let parts = time24.split(':');
+        let hour = parseInt(parts[0]);
+        let minute = parts[1];
+        let ampm = hour >= 12 ? 'م' : 'ص';
+        let hour12 = hour % 12;
+        if (hour12 === 0) hour12 = 12;
+        return `${hour12}:${minute} ${ampm}`;
+    }
+    
+    // حساب الوقت المتبقي بدقة
+    function getRemainingTime(endTime24) {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        let endMinutes = timeStringToDecimal(endTime24);
+        
+        if (nowMinutes >= endMinutes) return "انتهى الشفت";
+        
+        let diffMinutes = endMinutes - nowMinutes;
+        let hours = Math.floor(diffMinutes / 60);
+        let minutes = diffMinutes % 60;
+        return `${hours} ساعة و ${minutes} دقيقة`;
+    }
+    
+    // التحقق من نشاط الشفت بالدقيقة
+    function isShiftActive(shift) {
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const shiftDate = new Date(shift.date);
+        const today = new Date();
+        
+        if (shiftDate.toDateString() !== today.toDateString()) return false;
+        
+        const startMinutes = timeStringToDecimal(shift.startTime);
+        const endMinutes = timeStringToDecimal(shift.endTime);
+        
+        return nowMinutes >= startMinutes && nowMinutes <= endMinutes;
+    }
+    
+    function getActiveEmployeeAndShift() {
+        for (let emp of employees) {
+            const activeShift = emp.shifts?.find(sh => isShiftActive(sh));
+            if (activeShift) return { employee: emp, shift: activeShift };
+        }
+        return { employee: null, shift: null };
+    }
+    
+    // ---------- تحميل وحفظ البيانات ----------
+    function loadData() {
+        // تحميل المنتجات
+        const storedProducts = localStorage.getItem("champion_products");
+        if (storedProducts) products = JSON.parse(storedProducts);
+        else {
+            products = [
+                { 
+                    id: "p1", name: "قهوة عربية", price: 25, imageUrl: "https://placehold.co/400x300?text=Coffee",
+                    options: [{ name: "الحجم", choices: [{ text: "صغير", priceModifier: 0 }, { text: "وسط", priceModifier: 5 }, { text: "كبير", priceModifier: 10 }] }]
+                },
+                { 
+                    id: "p2", name: "بيبسي", price: 10, imageUrl: "https://placehold.co/400x300?text=Pepsi",
+                    options: [{ name: "النوع", choices: [{ text: "مع تلج", priceModifier: 0 }, { text: "بدون تلج", priceModifier: 0 }] }]
+                }
+            ];
+        }
+        
+        // تحميل الأدمن
+        const storedAdmins = localStorage.getItem("champion_admins");
+        if (storedAdmins) admins = JSON.parse(storedAdmins);
+        else admins = [SUPER_ADMIN];
+        
+        // تحميل الموظفين
+        const storedEmps = localStorage.getItem("champion_employees");
+        if (storedEmps) employees = JSON.parse(storedEmps);
+        else {
+            employees = [
+                { id: "emp1", fullName: "أحمد علي", username: "ahmed", password: "123", shifts: [] },
+                { id: "emp2", fullName: "سارة خالد", username: "sara", password: "123", shifts: [] }
+            ];
+        }
+        
+        // تحميل الطلبات
+        const storedOrders = localStorage.getItem("champion_orders");
+        orders = storedOrders ? JSON.parse(storedOrders) : [];
+        
+        // استعادة حالة تسجيل الدخول
+        const savedUser = localStorage.getItem("champion_currentUser");
+        if (savedUser) {
+            const userData = JSON.parse(savedUser);
+            if (userData.type === "admin") {
+                const adminExists = admins.find(a => a.id === userData.id);
+                if (adminExists) currentUser = userData;
+            } else if (userData.type === "employee") {
+                const empExists = employees.find(e => e.id === userData.id);
+                if (empExists) currentUser = userData;
+            }
+        }
+    }
+    
+    function saveData() {
+        localStorage.setItem("champion_products", JSON.stringify(products));
+        localStorage.setItem("champion_admins", JSON.stringify(admins));
+        localStorage.setItem("champion_employees", JSON.stringify(employees));
+        localStorage.setItem("champion_orders", JSON.stringify(orders));
+        if (currentUser) {
+            localStorage.setItem("champion_currentUser", JSON.stringify(currentUser));
+        } else {
+            localStorage.removeItem("champion_currentUser");
+        }
+    }
+    
+    // ---------- صوت الإشعار ----------
+    function playSound() {
+        try {
+            let audio = new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3");
+            audio.volume = 0.5;
+            audio.play().catch(() => {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                gain.gain.value = 0.2;
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+                osc.stop(ctx.currentTime + 0.5);
+                ctx.resume();
+            });
+        } catch(e) {}
+    }
+    
+    // ---------- إضافة طلب ----------
+    function addOrder(productId, customerName, roomName, quantity, selectedOptions) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return false;
+        
+        let extra = 0;
+        let optionsText = [];
+        for (let opt of selectedOptions) {
+            extra += opt.priceModifier;
+            optionsText.push(`${opt.optionName}: ${opt.choiceText}`);
+        }
+        const unitPrice = product.price + extra;
+        const totalPrice = unitPrice * quantity;
+        
+        const { employee, shift } = getActiveEmployeeAndShift();
+        
+        const newOrder = {
+            id: "ord_" + Date.now(),
+            productId, productName: product.name,
+            optionsText: optionsText.join(" | "),
+            quantity, totalPrice, customerName, roomName,
+            status: "pending",
+            assignedToEmpId: employee ? employee.id : null,
+            shiftId: shift ? shift.id : null,
+            createdAt: new Date().toLocaleString('ar-EG'),
+            timestamp: Date.now()
+        };
+        orders.unshift(newOrder);
+        if (shift) { if (!shift.orderIds) shift.orderIds = []; shift.orderIds.push(newOrder.id); }
+        saveData();
+        playSound();
+        alert(`✅ تم الطلب! الإجمالي: ${totalPrice} ج.م`);
+        return true;
+    }
+    
+    function deliverOrder(orderId) {
+        const order = orders.find(o => o.id === orderId);
+        if (!order || order.status === "delivered") return;
+        order.status = "delivered";
+        saveData();
+        alert("✅ تم تسليم الطلب");
+        renderUI();
+    }
+    
+    // ---------- دوال الإدارة ----------
+    function addProduct(name, price, imageUrl, options) {
+        if (!currentUser || currentUser.type !== "admin") return;
+        products.push({ id: "p" + Date.now(), name, price: Number(price), imageUrl: imageUrl || "https://placehold.co/400x300", options: options });
+        saveData(); 
+        renderUI();
+    }
+    
+    function updateProduct(productId, name, price, imageUrl, options) {
+        let p = products.find(p => p.id === productId);
+        if (p) { 
+            p.name = name; 
+            p.price = Number(price); 
+            p.imageUrl = imageUrl; 
+            p.options = options; 
+            saveData(); 
+            renderUI();
+        }
+    }
+    
+    function deleteProduct(productId) { 
+        products = products.filter(p => p.id !== productId); 
+        saveData(); 
+        renderUI(); 
+    }
+    
+    function addAdmin(fullName, username, password) { 
+        admins.push({ id: "a" + Date.now(), fullName, username, password }); 
+        saveData(); 
+        renderUI(); 
+    }
+    
+    function deleteAdmin(id) { 
+        if (admins.find(a => a.id === id)?.username === "admin") { 
+            alert("لا يمكن حذف المدير الأساسي"); 
+            return; 
+        } 
+        admins = admins.filter(a => a.id !== id); 
+        saveData(); 
+        renderUI(); 
+    }
+    
+    function addEmployee(fullName, username, password) { 
+        employees.push({ id: "e" + Date.now(), fullName, username, password, shifts: [] }); 
+        saveData(); 
+        renderUI(); 
+    }
+    
+    function deleteEmployee(id) { 
+        employees = employees.filter(e => e.id !== id); 
+        saveData(); 
+        renderUI(); 
+    }
+    
+    function addShift(empId, date, startTime24, endTime24) {
+        const emp = employees.find(e => e.id === empId);
+        if (emp) { 
+            emp.shifts.push({ id: "sh" + Date.now(), date, startTime: startTime24, endTime: endTime24, orderIds: [] }); 
+            saveData(); 
+            renderUI(); 
+            alert("✅ تم إنشاء الشفت");
+        }
+    }
+    
+    function deleteShift(empId, shiftId) {
+        const emp = employees.find(e => e.id === empId);
+        if (emp) { 
+            emp.shifts = emp.shifts.filter(s => s.id !== shiftId); 
+            saveData(); 
+            renderUI(); 
+        }
+    }
+    
+    // ---------- تسجيل الدخول ----------
+    function login(username, password) {
+        let admin = admins.find(a => a.username === username && a.password === password);
+        if (admin) { 
+            currentUser = { type: "admin", id: admin.id, fullName: admin.fullName }; 
+            saveData();
+            return true; 
+        }
+        let emp = employees.find(e => e.username === username && e.password === password);
+        if (emp) { 
+            currentUser = { type: "employee", id: emp.id, fullName: emp.fullName }; 
+            saveData();
+            return true; 
+        }
+        return false;
+    }
+    
+    function logout() { 
+        currentUser = null; 
+        localStorage.removeItem("champion_currentUser");
+        if(countdownInterval) clearInterval(countdownInterval); 
+        renderUI(); 
+    }
+    
+    function showLoginPage() {
+        document.getElementById("mainContent").innerHTML = `
+            <div class="login-page" style="max-width:450px; margin:auto;">
+                <div style="text-align:center;">
+                    <i class="fas fa-gamepad" style="font-size:60px; color:#f4a261;"></i>
+                    <h2 style="margin:20px 0;">مرحباً بك في Champion</h2>
+                </div>
+                <input type="text" id="loginUsername" placeholder="اسم المستخدم">
+                <input type="password" id="loginPassword" placeholder="كلمة المرور">
+                <button id="doLogin" style="background:#f4a261; width:100%; padding:12px; margin-top:15px; font-size:1rem;">دخول</button>
+            </div>
+        `;
+        document.getElementById("doLogin").onclick = () => {
+            let u = document.getElementById("loginUsername").value;
+            let p = document.getElementById("loginPassword").value;
+            if (login(u, p)) renderUI(); 
+            else alert("بيانات الدخول غير صحيحة");
+        };
+    }
+    
+    // ---------- بناء الواجهات ----------
+    function renderUI() {
+        updateAuthWidget();
+        const adminDiv = document.getElementById("adminTabsContainer");
+        const empDiv = document.getElementById("employeeTabsContainer");
+        adminDiv.style.display = "none"; 
+        empDiv.style.display = "none";
+        
+        if (currentUser?.type === "admin") {
+            adminDiv.style.display = "flex";
+            adminDiv.innerHTML = `<button class="tab-btn" data-tab="products">📦 المنتجات</button>
+                <button class="tab-btn" data-tab="employees">👥 الموظفين والشفتات</button>
+                <button class="tab-btn" data-tab="admins">👑 إدارة المديرين</button>
+                <button class="tab-btn" data-tab="allorders">📊 الطلبات الجديدة</button>
+                <button class="tab-btn" data-tab="orderslog">📜 سجل الطلبات</button>`;
+            attachAdminTabs();
+            let active = localStorage.getItem("activeAdminTab") || "products";
+            renderAdminPanel(active);
+        } else if (currentUser?.type === "employee") {
+            empDiv.style.display = "flex";
+            empDiv.innerHTML = `<button class="tab-btn" data-tab="myorders">📋 طلبات شفتي</button>
+                <button class="tab-btn" data-tab="empLog">📜 سجل طلباتي</button>`;
+            attachEmployeeTabs();
+            renderEmployeePanel("myorders");
+        } else {
+            renderCustomerMenu();
+        }
+    }
+    
+    function attachAdminTabs() {
+        document.querySelectorAll("#adminTabsContainer .tab-btn").forEach(btn => {
+            btn.onclick = () => { 
+                localStorage.setItem("activeAdminTab", btn.getAttribute("data-tab")); 
+                renderAdminPanel(btn.getAttribute("data-tab")); 
+            };
+        });
+    }
+    
+    function attachEmployeeTabs() {
+        document.querySelectorAll("#employeeTabsContainer .tab-btn").forEach(btn => {
+            btn.onclick = () => renderEmployeePanel(btn.getAttribute("data-tab"));
+        });
+    }
+    
+    // ---------- عرض المنتجات والإدارة ----------
+    let tempNewOptions = [];
+    
+    function renderAdminPanel(tab) {
+        const main = document.getElementById("mainContent");
+        if (tab === "products") {
+            main.innerHTML = `
+                <div class="admin-panel">
+                    <h3>➕ إضافة منتج جديد</h3>
+                    <div class="row-flex">
+                        <input id="newProdName" placeholder="اسم المنتج">
+                        <input id="newProdPrice" placeholder="السعر الأساسي">
+                        <input id="newProdImg" placeholder="رابط الصورة">
+                    </div>
+                    <div class="options-builder">
+                        <h4>⚙️ خيارات المنتج</h4>
+                        <div id="optionsBuilderContainer"></div>
+                        <div class="row-flex" style="margin-top:15px;">
+                            <input id="newOptionName" placeholder="اسم الخيار (مثال: الحجم)">
+                            <button id="addOptionBtn">➕ إضافة خيار</button>
+                        </div>
+                    </div>
+                    <button id="saveProductBtn" style="background:#2a9d8f; padding:12px; width:100%;">💾 حفظ المنتج</button>
+                    <hr><h3>📀 المنتجات الحالية</h3>
+                    <div id="productsList" class="products-grid"></div>
+                </div>
+            `;
+            tempNewOptions = [];
+            renderTempOptionsBuilder();
+            
+            document.getElementById("addOptionBtn").onclick = () => {
+                let optName = document.getElementById("newOptionName").value.trim();
+                if (!optName) { alert("أدخل اسم الخيار"); return; }
+                tempNewOptions.push({ name: optName, choices: [] });
+                document.getElementById("newOptionName").value = "";
+                renderTempOptionsBuilder();
+            };
+            
+            document.getElementById("saveProductBtn").onclick = () => {
+                let name = document.getElementById("newProdName").value.trim();
+                let price = document.getElementById("newProdPrice").value.trim();
+                let img = document.getElementById("newProdImg").value.trim();
+                if (!name || !price) { alert("اسم المنتج والسعر مطلوبان"); return; }
+                addProduct(name, price, img, JSON.parse(JSON.stringify(tempNewOptions)));
+            };
+            renderProductsList();
+        }
+        else if (tab === "employees") {
+            let html = `<div class="admin-panel"><h3>➕ إضافة موظف</h3>
+                <div class="row-flex">
+                    <input id="empFull" placeholder="الاسم الكامل">
+                    <input id="empUser" placeholder="اسم المستخدم">
+                    <input id="empPass" placeholder="كلمة المرور">
+                    <button onclick="window.addEmpUI()">إضافة</button>
+                </div><hr>`;
+            employees.forEach(emp => {
+                html += `<div style="background:#faf7f2; border-radius:28px; padding:15px; margin-bottom:15px;">
+                    <b>👤 ${emp.fullName}</b> <button class="danger" onclick="window.delEmpUI('${emp.id}')">حذف</button>
+                    <div class="row-flex" style="margin-top:12px;">
+                        <input type="date" id="date_${emp.id}" value="${new Date().toISOString().slice(0,10)}" style="width:auto;">
+                        <div class="time-input-group">
+                            <input type="number" id="startHour_${emp.id}" placeholder="7" min="1" max="12" style="width:60px;">
+                            <select id="startAmpm_${emp.id}" style="width:70px;"><option value="ص">ص</option><option value="م">م</option></select>
+                            <span>:</span>
+                            <input type="number" id="startMin_${emp.id}" placeholder="00" min="0" max="59" style="width:60px;">
+                        </div>
+                        <span>إلى</span>
+                        <div class="time-input-group">
+                            <input type="number" id="endHour_${emp.id}" placeholder="10" min="1" max="12" style="width:60px;">
+                            <select id="endAmpm_${emp.id}" style="width:70px;"><option value="ص">ص</option><option value="م" selected>م</option></select>
+                            <span>:</span>
+                            <input type="number" id="endMin_${emp.id}" placeholder="00" min="0" max="59" style="width:60px;">
+                        </div>
+                        <button onclick="window.addShiftUI('${emp.id}')">➕ إنشاء شفت</button>
+                    </div>
+                    <div><strong>📅 الشفتات:</strong></div>
+                    <div id="shiftsList_${emp.id}">`;
+                emp.shifts.forEach(shift => {
+                    html += `<div class="shift-item">
+                        <span>📅 ${shift.date} | 🕐 ${formatTo12Hour(shift.startTime)} → ${formatTo12Hour(shift.endTime)}</span>
+                        <div>
+                            <button class="danger" style="padding:4px 12px;" onclick="window.delShiftUI('${emp.id}','${shift.id}')">🗑️ حذف</button>
+                        </div>
+                    </div>`;
+                });
+                html += `</div></div>`;
+            });
+            html += `</div>`;
+            main.innerHTML = html;
+            
+            window.addEmpUI = () => { 
+                let n=document.getElementById("empFull").value,u=document.getElementById("empUser").value,p=document.getElementById("empPass").value; 
+                if(n&&u&&p) addEmployee(n,u,p); 
+                else alert("املأ جميع الحقول");
+            };
+            window.delEmpUI = (id) => { if(confirm("حذف الموظف؟")) deleteEmployee(id); };
+            window.addShiftUI = (id) => { 
+                let date = document.getElementById(`date_${id}`).value;
+                let startHour = document.getElementById(`startHour_${id}`).value;
+                let startAmpm = document.getElementById(`startAmpm_${id}`).value;
+                let startMin = document.getElementById(`startMin_${id}`).value || "00";
+                let endHour = document.getElementById(`endHour_${id}`).value;
+                let endAmpm = document.getElementById(`endAmpm_${id}`).value;
+                let endMin = document.getElementById(`endMin_${id}`).value || "00";
+                
+                if (!date || !startHour || !endHour) { alert("أدخل التاريخ والوقت"); return; }
+                let startTime24 = formatTimeTo24(startHour, startMin, startAmpm);
+                let endTime24 = formatTimeTo24(endHour, endMin, endAmpm);
+                addShift(id, date, startTime24, endTime24);
+            };
+            window.delShiftUI = (eId, sId) => { if(confirm("حذف الشفت؟")) deleteShift(eId, sId); };
+        }
+        else if (tab === "admins") {
+            let html = `<div class="admin-panel"><h3>👑 إضافة مدير جديد</h3>
+                <div class="row-flex">
+                    <input id="adminFull" placeholder="الاسم">
+                    <input id="adminUser" placeholder="اسم المستخدم">
+                    <input id="adminPass" placeholder="كلمة المرور">
+                    <button onclick="window.addAdminUI()">إضافة</button>
+                </div><hr><h3>قائمة المديرين</h3>`;
+            admins.forEach(ad => { 
+                html += `<div style="display:flex; justify-content:space-between; background:#f0f3f5; padding:12px 20px; border-radius:40px; margin-bottom:8px;">
+                    <span>👑 ${ad.fullName}</span> 
+                    ${ad.username !== "admin" ? `<button class="danger" onclick="window.delAdminUI('${ad.id}')">حذف</button>` : "<span style='color:green;'>مدير أساسي</span>"}
+                </div>`; 
+            });
+            main.innerHTML = html;
+            window.addAdminUI = () => { 
+                let n=document.getElementById("adminFull").value,u=document.getElementById("adminUser").value,p=document.getElementById("adminPass").value; 
+                if(n&&u&&p) addAdmin(n,u,p); 
+                else alert("املأ جميع الحقول");
+            };
+            window.delAdminUI = (id) => deleteAdmin(id);
+        }
+        else if (tab === "allorders") {
+            let pending = orders.filter(o => o.status === "pending");
+            let html = `<div class="admin-panel"><h3>🆕 الطلبات الجديدة</h3>`;
+            if(pending.length===0) html+=`<p>لا توجد طلبات جديدة</p>`;
+            pending.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>${o.productName}</b><br>
+                    خيارات: ${o.optionsText}<br>
+                    الكمية: ${o.quantity} | الإجمالي: ${o.totalPrice} ج.م<br>
+                    العميل: ${o.customerName} | روم: ${o.roomName}<br>
+                    الموظف المسؤول: ${employees.find(e=>e.id===o.assignedToEmpId)?.fullName || "لم يسند بعد"}
+                </div>`; 
+            });
+            main.innerHTML = html;
+        }
+        else if (tab === "orderslog") {
+            let html = `<div class="admin-panel"><h3>📜 سجل جميع الطلبات</h3>`;
+            orders.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>${o.productName}</b> (${o.optionsText}) | ${o.totalPrice} ج.م<br>
+                    العميل: ${o.customerName} | الحالة: ${o.status === "pending" ? "🟡 قيد التجهيز" : "✅ مسلم"}<br>
+                    الوقت: ${o.createdAt}
+                </div>`; 
+            });
+            main.innerHTML = html;
+        }
+    }
+    
+    function renderTempOptionsBuilder() {
+        const container = document.getElementById("optionsBuilderContainer");
+        if (!container) return;
+        if (tempNewOptions.length === 0) { 
+            container.innerHTML = `<p style="color:gray;">لا توجد خيارات. أضف خياراً جديداً (مثل: الحجم، النوع).</p>`; 
+            return; 
+        }
+        let html = "";
+        tempNewOptions.forEach((opt, idx) => {
+            html += `<div class="option-card">
+                <div class="option-title">📌 ${opt.name} <button class="danger" style="padding:2px 12px;" onclick="window.removeNewOption(${idx})">حذف</button></div>
+                <div id="choices_${idx}">`;
+            opt.choices.forEach((ch, chIdx) => {
+                html += `<div class="choice-item">
+                    <input type="text" value="${ch.text}" id="newChoiceText_${idx}_${chIdx}" placeholder="الاختيار" style="width:40%;">
+                    <input type="number" value="${ch.priceModifier}" id="newChoicePrice_${idx}_${chIdx}" placeholder="سعر إضافي" style="width:30%;">
+                    <button class="danger" onclick="window.removeNewChoice(${idx}, ${chIdx})">✖</button>
+                </div>`;
+            });
+            html += `<div class="row-flex" style="margin-top:10px;">
+                <input type="text" id="newChoiceName_${idx}" placeholder="اختيار جديد">
+                <input type="number" id="newChoicePriceVal_${idx}" placeholder="سعر إضافي" value="0">
+                <button onclick="window.addNewChoice(${idx})">➕ إضافة اختيار</button>
+            </div></div></div>`;
+        });
+        container.innerHTML = html;
+        
+        window.removeNewOption = (idx) => { tempNewOptions.splice(idx,1); renderTempOptionsBuilder(); };
+        window.addNewChoice = (idx) => {
+            let text = document.getElementById(`newChoiceName_${idx}`).value.trim();
+            let price = parseFloat(document.getElementById(`newChoicePriceVal_${idx}`).value) || 0;
+            if (!text) { alert("أدخل اسم الاختيار"); return; }
+            tempNewOptions[idx].choices.push({ text: text, priceModifier: price });
+            renderTempOptionsBuilder();
+        };
+        window.removeNewChoice = (optIdx, chIdx) => { tempNewOptions[optIdx].choices.splice(chIdx,1); renderTempOptionsBuilder(); };
+    }
+    
+    function renderProductsList() {
+        const container = document.getElementById("productsList");
+        if (!container) return;
+        let html = "";
+        products.forEach(p => {
+            let optText = p.options.map(opt => `${opt.name} (${opt.choices.map(ch => ch.text + (ch.priceModifier?`+${ch.priceModifier}`:'')).join(", ")})`).join(" | ");
+            html += `<div class="product-card">
+                <div class="product-img"><img src="${p.imageUrl}"></div>
+                <div class="product-details">
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-price">${p.price} ج.م</div>
+                    <small>خيارات: ${optText || "لا يوجد"}</small>
+                    <button class="edit-product-btn" onclick="window.openEditPage('${p.id}')">✏️ تعديل</button>
+                    <button class="danger" onclick="window.deleteProductFromList('${p.id}')" style="margin-top:5px;">🗑️ حذف</button>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+        window.deleteProductFromList = (id) => { if(confirm("حذف المنتج؟")) deleteProduct(id); };
+        window.openEditPage = (id) => { showEditProductPage(id); };
+    }
+    
+    function showEditProductPage(productId) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        let editOptions = JSON.parse(JSON.stringify(product.options));
+        
+        function buildEditPage() {
+            let optionsHtml = "";
+            editOptions.forEach((opt, idx) => {
+                optionsHtml += `<div class="option-card">
+                    <div class="option-title">📌 ${opt.name} <button class="danger" onclick="removeEditOption(${idx})">حذف</button></div>
+                    <div id="editChoices_${idx}">`;
+                opt.choices.forEach((ch, chIdx) => {
+                    optionsHtml += `<div class="choice-item">
+                        <input type="text" value="${ch.text}" id="editChoiceText_${idx}_${chIdx}" style="width:40%;">
+                        <input type="number" value="${ch.priceModifier}" id="editChoicePrice_${idx}_${chIdx}" style="width:30%;">
+                        <button class="danger" onclick="removeEditChoice(${idx}, ${chIdx})">✖</button>
+                    </div>`;
+                });
+                optionsHtml += `<div class="row-flex" style="margin-top:10px;">
+                    <input type="text" id="newEditChoice_${idx}" placeholder="اختيار جديد">
+                    <input type="number" id="newEditPrice_${idx}" placeholder="سعر إضافي" value="0">
+                    <button onclick="addEditChoice(${idx})">➕ إضافة</button>
+                </div></div></div>`;
+            });
+            
+            document.getElementById("mainContent").innerHTML = `
+                <div class="edit-product-page">
+                    <button onclick="window.renderAdminPanel('products')" style="margin-bottom:20px;">⬅ رجوع</button>
+                    <h2>✏️ تعديل المنتج: ${product.name}</h2>
+                    <div class="row-flex">
+                        <input id="editProdName" value="${product.name}">
+                        <input id="editProdPrice" value="${product.price}">
+                        <input id="editProdImg" value="${product.imageUrl}">
+                    </div>
+                    <div class="options-builder">
+                        <h4>⚙️ خيارات المنتج</h4>
+                        <div id="editOptionsContainer">${optionsHtml}</div>
+                        <div class="row-flex" style="margin-top:15px;">
+                            <input id="newOptionNameEdit" placeholder="اسم خيار جديد">
+                            <button id="addNewOptionBtn">➕ إضافة خيار</button>
+                        </div>
+                    </div>
+                    <button id="saveEditBtn" style="background:#2a9d8f; padding:12px; width:100%;">💾 حفظ التعديلات</button>
+                </div>
+            `;
+            
+            window.removeEditOption = (idx) => { editOptions.splice(idx,1); buildEditPage(); };
+            window.removeEditChoice = (optIdx, chIdx) => { editOptions[optIdx].choices.splice(chIdx,1); buildEditPage(); };
+            window.addEditChoice = (idx) => {
+                let text = document.getElementById(`newEditChoice_${idx}`).value.trim();
+                let price = parseFloat(document.getElementById(`newEditPrice_${idx}`).value) || 0;
+                if (!text) { alert("أدخل اسم الاختيار"); return; }
+                editOptions[idx].choices.push({ text: text, priceModifier: price });
+                buildEditPage();
+            };
+            
+            document.getElementById("addNewOptionBtn").onclick = () => {
+                let newOptName = document.getElementById("newOptionNameEdit").value.trim();
+                if (!newOptName) { alert("أدخل اسم الخيار"); return; }
+                editOptions.push({ name: newOptName, choices: [] });
+                document.getElementById("newOptionNameEdit").value = "";
+                buildEditPage();
+            };
+            
+            document.getElementById("saveEditBtn").onclick = () => {
+                let newName = document.getElementById("editProdName").value.trim();
+                let newPrice = document.getElementById("editProdPrice").value.trim();
+                let newImg = document.getElementById("editProdImg").value.trim();
+                if (!newName || !newPrice) { alert("اسم المنتج والسعر مطلوبان"); return; }
+                for (let i = 0; i < editOptions.length; i++) {
+                    for (let j = 0; j < editOptions[i].choices.length; j++) {
+                        let textInput = document.getElementById(`editChoiceText_${i}_${j}`);
+                        let priceInput = document.getElementById(`editChoicePrice_${i}_${j}`);
+                        if (textInput) editOptions[i].choices[j].text = textInput.value;
+                        if (priceInput) editOptions[i].choices[j].priceModifier = parseFloat(priceInput.value) || 0;
+                    }
+                }
+                updateProduct(product.id, newName, newPrice, newImg, editOptions);
+                alert("✅ تم تحديث المنتج");
+            };
+        }
+        buildEditPage();
+    }
+    
+    // ---------- واجهة الموظف ----------
+    function renderEmployeePanel(tab) {
+        const empId = currentUser.id;
+        const main = document.getElementById("mainContent");
+        
+        if (tab === "myorders") {
+            const emp = employees.find(e => e.id === empId);
+            const activeShift = emp?.shifts.find(sh => isShiftActive(sh));
+            let remainingTime = "";
+            
+            if (activeShift) {
+                remainingTime = getRemainingTime(activeShift.endTime);
+                if (countdownInterval) clearInterval(countdownInterval);
+                countdownInterval = setInterval(() => {
+                    const newRemaining = getRemainingTime(activeShift.endTime);
+                    const timerDiv = document.getElementById("countdownTimer");
+                    if (timerDiv) timerDiv.innerText = `⏰ الوقت المتبقي حتى نهاية الشفت: ${newRemaining}`;
+                    if (newRemaining === "انتهى الشفت") {
+                        clearInterval(countdownInterval);
+                        renderEmployeePanel("myorders");
+                    }
+                }, 60000);
+            }
+            
+            let myOrders = orders.filter(o => o.assignedToEmpId === empId && o.status === "pending");
+            let shiftTimeText = "";
+            if (activeShift) {
+                shiftTimeText = `(${formatTo12Hour(activeShift.startTime)} → ${formatTo12Hour(activeShift.endTime)})`;
+            }
+            
+            let html = `<div class="employee-panel">
+                <h3>📋 طلبات شفتي الحالية ${shiftTimeText} <button onclick="playSound()" style="margin-right:15px;">🔔 اختبار الصوت</button></h3>
+                <div id="countdownTimer" class="countdown-timer">⏰ الوقت المتبقي حتى نهاية الشفت: ${remainingTime || "لا يوجد شفت نشط"}</div>`;
+            if (myOrders.length === 0) html += `<p>✨ لا توجد طلبات معلقة في شفتك</p>`;
+            myOrders.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>${o.productName}</b><br>
+                    خيارات: ${o.optionsText}<br>
+                    الكمية: ${o.quantity} | الإجمالي: ${o.totalPrice} ج.م<br>
+                    العميل: ${o.customerName} | روم: ${o.roomName}<br>
+                    <button class="success" onclick="window.deliverOrderUI('${o.id}')">✅ تسليم الطلب</button>
+                </div>`; 
+            });
+            main.innerHTML = html;
+            window.deliverOrderUI = (id) => { deliverOrder(id); renderEmployeePanel("myorders"); };
+        } 
+        else if (tab === "empLog") {
+            if (countdownInterval) clearInterval(countdownInterval);
+            let myOrders = orders.filter(o => o.assignedToEmpId === empId);
+            let html = `<div class="employee-panel"><h3>📜 سجل طلباتي</h3>`;
+            if (myOrders.length === 0) html += `<p>لا توجد طلبات سابقة</p>`;
+            myOrders.forEach(o => { 
+                html += `<div class="order-item">
+                    <b>${o.productName}</b> (${o.optionsText}) | ${o.totalPrice} ج.م<br>
+                    الحالة: ${o.status === "pending" ? "🟡 قيد التجهيز" : "✅ مسلم"}<br>
+                    الوقت: ${o.createdAt}
+                </div>`; 
+            });
+            main.innerHTML = html;
+        }
+    }
+    
+    // ---------- واجهة العميل ----------
+    function renderCustomerMenu() {
+        if (countdownInterval) clearInterval(countdownInterval);
+        const main = document.getElementById("mainContent");
+        let html = `<h2>🎮 القائمة الرئيسية</h2><div class="products-grid">`;
+        products.forEach(prod => {
+            html += `<div class="product-card" onclick="window.showOrderPageUI('${prod.id}')">
+                <div class="product-img"><img src="${prod.imageUrl}"></div>
+                <div class="product-details">
+                    <div class="product-name">${prod.name}</div>
+                    <div class="product-price">💰 ${prod.price} ج.م</div>
+                    <button class="order-now-btn">اطلب الآن</button>
+                </div>
+            </div>`;
+        });
+        html += `</div>`;
+        main.innerHTML = html;
+        window.showOrderPageUI = (pid) => showOrderPage(pid);
+        window.renderCustomerMenu = renderCustomerMenu;
+    }
+    
+    function showOrderPage(productId) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        let quantity = 1;
+        let selectedChoices = [];
+        product.options.forEach((opt, idx) => {
+            if (opt.choices.length > 0) {
+                selectedChoices.push({ optionName: opt.name, choiceText: opt.choices[0].text, priceModifier: opt.choices[0].priceModifier });
+            } else {
+                selectedChoices.push({ optionName: opt.name, choiceText: "", priceModifier: 0 });
+            }
+        });
+        
+        function buildPage() {
+            let optionsHtml = "";
+            product.options.forEach((opt, idx) => {
+                if (opt.choices.length === 0) return;
+                optionsHtml += `<div class="option-group">
+                    <div class="option-title">${opt.name}</div>
+                    <div class="option-buttons">`;
+                opt.choices.forEach(ch => {
+                    let isSelected = selectedChoices[idx]?.choiceText === ch.text;
+                    optionsHtml += `<div class="option-choice ${isSelected ? 'selected' : ''}" data-optidx="${idx}" data-choice="${ch.text}" data-mod="${ch.priceModifier}">${ch.text} ${ch.priceModifier > 0 ? `(+${ch.priceModifier})` : ''}</div>`;
+                });
+                optionsHtml += `</div></div>`;
+            });
+            let extra = selectedChoices.reduce((s,ch) => s + (ch?.priceModifier || 0), 0);
+            let unitPrice = product.price + extra;
+            let total = unitPrice * quantity;
+            
+            document.getElementById("mainContent").innerHTML = `
+                <div class="order-page">
+                    <button onclick="window.renderCustomerMenu()" style="margin-bottom:15px;">⬅ رجوع</button>
+                    <div style="text-align:center;"><img src="${product.imageUrl}" style="max-width:100%; border-radius:28px; max-height:200px;"></div>
+                    <h2>${product.name}</h2>
+                    <p>السعر الأساسي: ${product.price} ج.م</p>
+                    ${optionsHtml}
+                    <div class="quantity-selector">
+                        <button class="qty-btn" id="minusQty">-</button>
+                        <span class="qty-value" id="qtySpan">${quantity}</span>
+                        <button class="qty-btn" id="plusQty">+</button>
+                    </div>
+                    <div class="row-flex">
+                        <input id="custName" placeholder="👤 اسم العميل">
+                        <input id="roomNum" placeholder="🏠 رقم الروم">
+                    </div>
+                    <h3>الإجمالي: <span id="totalSpan">${total}</span> ج.م</h3>
+                    <button id="confirmOrderBtn" style="width:100%; background:#2a9d8f; padding:12px;">تأكيد الطلب</button>
+                </div>
+            `;
+            
+            document.querySelectorAll(".option-choice").forEach(el => {
+                el.onclick = () => {
+                    let idx = parseInt(el.dataset.optidx);
+                    let choice = el.dataset.choice;
+                    let mod = parseFloat(el.dataset.mod);
+                    selectedChoices[idx] = { optionName: product.options[idx].name, choiceText: choice, priceModifier: mod };
+                    buildPage();
+                };
+            });
+            
+            document.getElementById("minusQty").onclick = () => { if(quantity>1) quantity--; updateTotal(); };
+            document.getElementById("plusQty").onclick = () => { quantity++; updateTotal(); };
+            
+            function updateTotal() {
+                let extraSum = selectedChoices.reduce((s,ch) => s + (ch?.priceModifier || 0), 0);
+                let finalUnit = product.price + extraSum;
+                let totalNow = finalUnit * quantity;
+                document.getElementById("qtySpan").innerText = quantity;
+                document.getElementById("totalSpan").innerText = totalNow;
+            }
+            
+            document.getElementById("confirmOrderBtn").onclick = () => {
+                let cust = document.getElementById("custName").value.trim();
+                let room = document.getElementById("roomNum").value.trim();
+                if(!cust || !room) { alert("أدخل اسم العميل ورقم الروم"); return; }
+                addOrder(product.id, cust, room, quantity, selectedChoices);
+                renderCustomerMenu();
+            };
+        }
+        buildPage();
+    }
+    
+    function updateAuthWidget() {
+        const span = document.getElementById("userGreeting");
+        const btn = document.getElementById("authButton");
+        if (currentUser) {
+            span.innerText = `مرحباً ${currentUser.fullName}`;
+            btn.innerText = "تسجيل خروج";
+            btn.classList.add("logout-btn"); 
+            btn.classList.remove("login-btn");
+            btn.onclick = () => logout();
+        } else {
+            span.innerText = "زائر";
+            btn.innerText = "تسجيل الدخول";
+            btn.classList.remove("logout-btn"); 
+            btn.classList.add("login-btn");
+            btn.onclick = () => showLoginPage();
+        }
+    }
+    
+    // تشغيل النظام
+    loadData();
+    renderUI();
+</script>
+</body>
+</html>
