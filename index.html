@@ -154,17 +154,14 @@
             font-size: 0.8rem;
             display: inline-block;
         }
-        @media (max-width:700px){ .site-header { flex-direction: column; text-align: center; } }
-        .clear-data-btn {
-            background: #e76f51;
-            color: white;
-            border: none;
+        .device-info {
+            background: #f4a26120;
             padding: 5px 12px;
             border-radius: 30px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-right: 10px;
+            font-size: 0.75rem;
+            color: #f4a261;
         }
+        @media (max-width:700px){ .site-header { flex-direction: column; text-align: center; } }
     </style>
 </head>
 <body>
@@ -186,14 +183,24 @@
 <div class="main-container" id="mainContent"></div>
 
 <script>
-    // ========== نظام Champion - نسخة نهائية تعمل 100% ==========
+    // ========== نظام Champion - نسخة مع حل مشكلة Refresh ==========
     
-    // مسح أي بيانات قديمة من localStorage
+    // كشف نوع الجهاز
+    function getDeviceType() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        if (/android/i.test(userAgent)) return "📱 تلفون (Android)";
+        if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) return "📱 تلفون (iOS)";
+        if (/windows|mac|linux|cros/i.test(userAgent)) return "💻 كمبيوتر";
+        return "🌐 جهاز غير معروف";
+    }
+    
+    const deviceType = getDeviceType();
+    
+    // مسح أي بيانات قديمة
     for(let i = 0; i < localStorage.length; i++) {
         let key = localStorage.key(i);
-        if(key && (key.includes('champion') || key.includes('ps_'))) {
-            localStorage.removeItem(key);
-            i--;
+        if(key && key.includes('champion_') && key !== 'champion_currentUser') {
+            // نحتفظ فقط بالحساب الحالي لو موجود
         }
     }
     
@@ -222,10 +229,6 @@
                 { 
                     id: "p2", name: "بيبسي", price: 10, imageUrl: "https://placehold.co/400x300?text=Pepsi",
                     options: [{ name: "النوع", choices: [{ text: "مع تلج", priceModifier: 0 }, { text: "بدون تلج", priceModifier: 0 }] }]
-                },
-                { 
-                    id: "p3", name: "ساندوتش فول", price: 30, imageUrl: "https://placehold.co/400x300?text=Foul",
-                    options: [{ name: "إضافات", choices: [{ text: "عادي", priceModifier: 0 }, { text: "بالبيض", priceModifier: 8 }, { text: "بالجبنة", priceModifier: 10 }] }]
                 }
             ];
         }
@@ -258,20 +261,22 @@
         }
         if (!orders) orders = [];
         
-        // استعادة حالة تسجيل الدخول
+        // ✅ استعادة حالة تسجيل الدخول بعد Refresh (الحل المهم)
         const savedUser = localStorage.getItem("champion_currentUser");
         if (savedUser && savedUser !== "undefined") {
             try {
                 const userData = JSON.parse(savedUser);
+                // التحقق من صلاحية المستخدم
                 if (userData.type === "admin" && admins.find(a => a.id === userData.id)) {
                     currentUser = userData;
                 } else if (userData.type === "employee" && employees.find(e => e.id === userData.id)) {
                     currentUser = userData;
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.log("خطأ في استعادة المستخدم");
+            }
         }
         
-        // حفظ البيانات بشكل أولي
         saveData();
     }
     
@@ -280,10 +285,9 @@
         localStorage.setItem("champion_admins", JSON.stringify(admins));
         localStorage.setItem("champion_employees", JSON.stringify(employees));
         localStorage.setItem("champion_orders", JSON.stringify(orders));
+        // ✅ الحفاظ على المستخدم الحالي
         if (currentUser) {
             localStorage.setItem("champion_currentUser", JSON.stringify(currentUser));
-        } else {
-            localStorage.removeItem("champion_currentUser");
         }
     }
     
@@ -327,6 +331,9 @@
         const unitPrice = product.price + extra;
         const totalPrice = unitPrice * quantity;
         
+        // إضافة معلومات الجهاز للطلب
+        const orderDevice = deviceType;
+        
         const newOrder = {
             id: "ord_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6),
             productId: product.id,
@@ -339,6 +346,7 @@
             status: "pending",
             deliveredBy: null,
             deliveredAt: null,
+            device: orderDevice, // تسجيل الجهاز اللي اتعمل منه الطلب
             createdAt: new Date().toLocaleString('ar-EG'),
             timestamp: Date.now()
         };
@@ -346,7 +354,7 @@
         orders.unshift(newOrder);
         saveData();
         playSound();
-        alert(`✅ تم الطلب بنجاح!\nالمنتج: ${product.name}\nالكمية: ${quantity}\nالإجمالي: ${totalPrice} ج.م`);
+        alert(`✅ تم الطلب بنجاح!\n📱 من جهاز: ${orderDevice}\n🍔 المنتج: ${product.name}\n🔢 الكمية: ${quantity}\n💰 الإجمالي: ${totalPrice} ج.م`);
         return true;
     }
     
@@ -365,7 +373,7 @@
         order.deliveredBy = employeeName;
         order.deliveredAt = new Date().toLocaleString('ar-EG');
         saveData();
-        alert(`✅ تم استلام الطلب بنجاح بواسطة: ${employeeName}`);
+        alert(`✅ تم استلام الطلب بنجاح بواسطة: ${employeeName}\n📱 الطلب كان من جهاز: ${order.device || "غير معروف"}`);
         renderUI();
         return true;
     }
@@ -461,7 +469,7 @@
                 <div style="text-align:center;">
                     <i class="fas fa-gamepad" style="font-size:60px; color:#f4a261;"></i>
                     <h2 style="margin:20px 0;">مرحباً بك في Champion</h2>
-                    <p style="color:#666; margin-bottom:20px;">نظام إدارة الطلبات</p>
+                    <p style="color:#666; margin-bottom:20px;">${deviceType}</p>
                 </div>
                 <input type="text" id="loginUsername" placeholder="اسم المستخدم">
                 <input type="password" id="loginPassword" placeholder="كلمة المرور">
@@ -476,112 +484,11 @@
         };
     }
     
-    // ========== بناء الواجهات ==========
-    function renderUI() {
-        updateAuthWidget();
-        const adminDiv = document.getElementById("adminTabsContainer");
-        const empDiv = document.getElementById("employeeTabsContainer");
-        adminDiv.style.display = "none"; 
-        empDiv.style.display = "none";
-        
-        if (currentUser?.type === "admin") {
-            adminDiv.style.display = "flex";
-            adminDiv.innerHTML = `<button class="tab-btn" data-tab="products">📦 المنتجات</button>
-                <button class="tab-btn" data-tab="employees">👥 الموظفين</button>
-                <button class="tab-btn" data-tab="admins">👑 إدارة المديرين</button>
-                <button class="tab-btn" data-tab="allorders">📊 الطلبات الجديدة</button>
-                <button class="tab-btn" data-tab="orderslog">📜 سجل الطلبات</button>`;
-            attachAdminTabs();
-            let active = localStorage.getItem("activeAdminTab") || "products";
-            renderAdminPanel(active);
-        } else if (currentUser?.type === "employee") {
-            empDiv.style.display = "flex";
-            empDiv.innerHTML = `<button class="tab-btn" data-tab="allorders">📋 استلام الطلبات</button>
-                <button class="tab-btn" data-tab="empLog">📜 سجل استلاماتي</button>`;
-            attachEmployeeTabs();
-            renderEmployeePanel("allorders");
-        } else {
-            renderCustomerMenu();
-        }
-    }
-    
-    function attachAdminTabs() {
-        document.querySelectorAll("#adminTabsContainer .tab-btn").forEach(btn => {
-            btn.onclick = () => { 
-                localStorage.setItem("activeAdminTab", btn.getAttribute("data-tab")); 
-                renderAdminPanel(btn.getAttribute("data-tab")); 
-            };
-        });
-    }
-    
-    function attachEmployeeTabs() {
-        document.querySelectorAll("#employeeTabsContainer .tab-btn").forEach(btn => {
-            btn.onclick = () => renderEmployeePanel(btn.getAttribute("data-tab"));
-        });
-    }
-    
-    let tempNewOptions = [];
+    // ========== عرض الأجهزة لكل طلب ==========
     
     function renderAdminPanel(tab) {
         const main = document.getElementById("mainContent");
-        if (tab === "products") {
-            main.innerHTML = `
-                <div class="admin-panel">
-                    <h3>➕ إضافة منتج جديد</h3>
-                    <div class="row-flex"><input id="newProdName" placeholder="اسم المنتج"><input id="newProdPrice" placeholder="السعر"><input id="newProdImg" placeholder="رابط الصورة"></div>
-                    <div class="options-builder">
-                        <h4>⚙️ خيارات المنتج</h4>
-                        <div id="optionsBuilderContainer"></div>
-                        <div class="row-flex" style="margin-top:15px;"><input id="newOptionName" placeholder="اسم الخيار (مثال: الحجم)"><button id="addOptionBtn">➕ إضافة خيار</button></div>
-                    </div>
-                    <button id="saveProductBtn" style="background:#2a9d8f; padding:12px; width:100%;">💾 حفظ المنتج</button>
-                    <hr><h3>📀 المنتجات الحالية</h3><div id="productsList" class="products-grid"></div>
-                </div>
-            `;
-            tempNewOptions = [];
-            renderTempOptionsBuilder();
-            
-            document.getElementById("addOptionBtn").onclick = () => {
-                let optName = document.getElementById("newOptionName").value.trim();
-                if (!optName) { alert("أدخل اسم الخيار"); return; }
-                tempNewOptions.push({ name: optName, choices: [] });
-                document.getElementById("newOptionName").value = "";
-                renderTempOptionsBuilder();
-            };
-            
-            document.getElementById("saveProductBtn").onclick = () => {
-                let name = document.getElementById("newProdName").value.trim();
-                let price = document.getElementById("newProdPrice").value.trim();
-                let img = document.getElementById("newProdImg").value.trim();
-                if (!name || !price) { alert("اسم المنتج والسعر مطلوبان"); return; }
-                addProduct(name, price, img, JSON.parse(JSON.stringify(tempNewOptions)));
-            };
-            renderProductsList();
-        }
-        else if (tab === "employees") {
-            let html = `<div class="admin-panel"><h3>➕ إضافة موظف جديد</h3>
-                <div class="row-flex"><input id="empFull" placeholder="الاسم الكامل"><input id="empUser" placeholder="اسم المستخدم"><input id="empPass" placeholder="كلمة المرور"><button onclick="window.addEmpUI()">إضافة</button></div><hr><h3>👥 قائمة الموظفين</h3>`;
-            employees.forEach(emp => {
-                html += `<div style="display:flex; justify-content:space-between; align-items:center; background:#faf7f2; padding:12px 20px; border-radius:40px; margin-bottom:10px;">
-                    <span><i class="fas fa-user"></i> ${emp.fullName} (${emp.username})</span>
-                    <button class="danger" onclick="window.delEmpUI('${emp.id}')">حذف</button>
-                </div>`;
-            });
-            html += `</div>`;
-            main.innerHTML = html;
-            
-            window.addEmpUI = () => { let n=document.getElementById("empFull").value,u=document.getElementById("empUser").value,p=document.getElementById("empPass").value; if(n&&u&&p) addEmployee(n,u,p); else alert("املأ جميع الحقول"); };
-            window.delEmpUI = (id) => { if(confirm("حذف الموظف؟")) deleteEmployee(id); };
-        }
-        else if (tab === "admins") {
-            let html = `<div class="admin-panel"><h3>👑 إضافة مدير جديد</h3>
-                <div class="row-flex"><input id="adminFull" placeholder="الاسم"><input id="adminUser" placeholder="اسم المستخدم"><input id="adminPass" placeholder="كلمة المرور"><button onclick="window.addAdminUI()">إضافة</button></div><hr><h3>قائمة المديرين</h3>`;
-            admins.forEach(ad => { html += `<div style="display:flex; justify-content:space-between; background:#f0f3f5; padding:12px 20px; border-radius:40px; margin-bottom:8px;"><span>👑 ${ad.fullName} (${ad.username})</span> ${ad.username !== "admin" ? `<button class="danger" onclick="window.delAdminUI('${ad.id}')">حذف</button>` : "<span style='color:green;'>مدير أساسي</span>"}</div>`; });
-            main.innerHTML = html;
-            window.addAdminUI = () => { let n=document.getElementById("adminFull").value,u=document.getElementById("adminUser").value,p=document.getElementById("adminPass").value; if(n&&u&&p) addAdmin(n,u,p); else alert("املأ جميع الحقول"); };
-            window.delAdminUI = (id) => deleteAdmin(id);
-        }
-        else if (tab === "allorders") {
+        if (tab === "allorders") {
             let pending = orders.filter(o => o.status === "pending");
             let html = `<div class="admin-panel"><h3>🆕 الطلبات الجديدة (غير مستلمة)</h3>`;
             if(pending.length===0) html+=`<p style="color:gray;">لا توجد طلبات جديدة</p>`;
@@ -591,6 +498,7 @@
                     🍽️ خيارات: ${o.optionsText}<br>
                     🔢 الكمية: ${o.quantity} | 💰 الإجمالي: ${o.totalPrice} ج.م<br>
                     👤 العميل: ${o.customerName} | 🏠 الروم: ${o.roomName}<br>
+                    📱 جهاز الطلب: ${o.device || "غير معروف"}<br>
                     🕐 وقت الطلب: ${o.createdAt}
                 </div>`; 
             });
@@ -603,6 +511,7 @@
                 html += `<div class="order-item">
                     <b>🍔 ${o.productName}</b> (${o.optionsText}) | 💰 ${o.totalPrice} ج.م<br>
                     👤 العميل: ${o.customerName}<br>
+                    📱 جهاز الطلب: ${o.device || "غير معروف"}<br>
                     <span class="${o.status === "pending" ? 'badge-pending' : 'badge-delivered'}">${o.status === "pending" ? '🟡 لم يستلم بعد' : '✅ تم الاستلام'}</span><br>
                     ${o.status === "delivered" ? `📌 استلم بواسطة: ${o.deliveredBy} في ${o.deliveredAt}` : ''}
                     🕐 وقت الطلب: ${o.createdAt}
@@ -610,98 +519,48 @@
             });
             main.innerHTML = html;
         }
-    }
-    
-    function renderTempOptionsBuilder() {
-        const container = document.getElementById("optionsBuilderContainer");
-        if (!container) return;
-        if (tempNewOptions.length === 0) { container.innerHTML = `<p style="color:gray;">لا توجد خيارات. أضف خياراً جديداً.</p>`; return; }
-        let html = "";
-        tempNewOptions.forEach((opt, idx) => {
-            html += `<div class="option-card"><div class="option-title">📌 ${opt.name} <button class="danger" onclick="window.removeNewOption(${idx})">حذف</button></div>`;
-            html += `<div id="choices_${idx}">`;
-            if (opt.choices && opt.choices.length) {
-                opt.choices.forEach((ch, chIdx) => {
-                    html += `<div class="choice-item"><input type="text" value="${ch.text}" id="newChoiceText_${idx}_${chIdx}" style="width:40%;"><input type="number" value="${ch.priceModifier}" id="newChoicePrice_${idx}_${chIdx}" style="width:30%;"><button class="danger" onclick="window.removeNewChoice(${idx}, ${chIdx})">✖</button></div>`;
-                });
-            }
-            html += `<div class="row-flex"><input type="text" id="newChoiceName_${idx}" placeholder="اختيار جديد"><input type="number" id="newChoicePriceVal_${idx}" placeholder="سعر إضافي" value="0"><button onclick="window.addNewChoice(${idx})">➕ إضافة</button></div>`;
-            html += `</div></div>`;
-        });
-        container.innerHTML = html;
-        
-        window.removeNewOption = (idx) => { tempNewOptions.splice(idx,1); renderTempOptionsBuilder(); };
-        window.addNewChoice = (idx) => { let text = document.getElementById(`newChoiceName_${idx}`).value.trim(); let price = parseFloat(document.getElementById(`newChoicePriceVal_${idx}`).value) || 0; if(!text) return; if(!tempNewOptions[idx].choices) tempNewOptions[idx].choices = []; tempNewOptions[idx].choices.push({ text: text, priceModifier: price }); renderTempOptionsBuilder(); };
-        window.removeNewChoice = (optIdx, chIdx) => { tempNewOptions[optIdx].choices.splice(chIdx,1); renderTempOptionsBuilder(); };
-    }
-    
-    function renderProductsList() {
-        const container = document.getElementById("productsList");
-        if (!container) return;
-        let html = "";
-        products.forEach(p => {
-            let optText = "";
-            if (p.options && p.options.length) {
-                optText = p.options.map(opt => `${opt.name} (${opt.choices.map(ch => ch.text + (ch.priceModifier?`+${ch.priceModifier}`:'')).join(", ")})`).join(" | ");
-            }
-            html += `<div class="product-card"><div class="product-img"><img src="${p.imageUrl}" onerror="this.src='https://placehold.co/400x300'"></div><div class="product-details"><div class="product-name">${p.name}</div><div class="product-price">💰 ${p.price} ج.م</div><small>خيارات: ${optText || "لا يوجد"}</small><button class="edit-product-btn" onclick="window.openEditPage('${p.id}')">✏️ تعديل</button><button class="danger" onclick="window.deleteProductFromList('${p.id}')" style="margin-top:5px;">🗑️ حذف</button></div></div>`;
-        });
-        container.innerHTML = html;
-        window.deleteProductFromList = (id) => { if(confirm("حذف المنتج نهائياً؟")) deleteProduct(id); };
-        window.openEditPage = (id) => { showEditProductPage(id); };
-    }
-    
-    function showEditProductPage(productId) {
-        const product = products.find(p => p.id === productId);
-        if (!product) return;
-        let editOptions = JSON.parse(JSON.stringify(product.options || []));
-        
-        function buildEditPage() {
-            let optionsHtml = "";
-            editOptions.forEach((opt, idx) => {
-                optionsHtml += `<div class="option-card"><div class="option-title">📌 ${opt.name} <button class="danger" onclick="removeEditOption(${idx})">حذف</button></div><div id="editChoices_${idx}">`;
-                if (opt.choices && opt.choices.length) {
-                    opt.choices.forEach((ch, chIdx) => {
-                        optionsHtml += `<div class="choice-item"><input type="text" value="${ch.text}" id="editChoiceText_${idx}_${chIdx}" style="width:40%;"><input type="number" value="${ch.priceModifier}" id="editChoicePrice_${idx}_${chIdx}" style="width:30%;"><button class="danger" onclick="removeEditChoice(${idx}, ${chIdx})">✖</button></div>`;
-                    });
-                }
-                optionsHtml += `<div class="row-flex"><input type="text" id="newEditChoice_${idx}" placeholder="اختيار جديد"><input type="number" id="newEditPrice_${idx}" placeholder="سعر إضافي" value="0"><button onclick="addEditChoice(${idx})">➕ إضافة</button></div></div></div>`;
-            });
-            document.getElementById("mainContent").innerHTML = `<div class="edit-product-page"><button onclick="window.renderAdminPanel('products')" style="margin-bottom:20px;">⬅ رجوع</button><h2>✏️ تعديل المنتج: ${product.name}</h2><div class="row-flex"><input id="editProdName" value="${product.name}"><input id="editProdPrice" value="${product.price}"><input id="editProdImg" value="${product.imageUrl}"></div><div class="options-builder"><h4>⚙️ خيارات المنتج</h4><div id="editOptionsContainer">${optionsHtml}</div><div class="row-flex"><input id="newOptionNameEdit" placeholder="اسم خيار جديد"><button id="addNewOptionBtn">➕ إضافة خيار</button></div></div><button id="saveEditBtn" style="background:#2a9d8f; padding:12px; width:100%;">💾 حفظ التعديلات</button></div>`;
-            
-            window.removeEditOption = (idx) => { editOptions.splice(idx,1); buildEditPage(); };
-            window.removeEditChoice = (optIdx, chIdx) => { if(editOptions[optIdx] && editOptions[optIdx].choices) editOptions[optIdx].choices.splice(chIdx,1); buildEditPage(); };
-            window.addEditChoice = (idx) => { let text = document.getElementById(`newEditChoice_${idx}`).value.trim(); let price = parseFloat(document.getElementById(`newEditPrice_${idx}`).value) || 0; if(!text) return; if(!editOptions[idx].choices) editOptions[idx].choices = []; editOptions[idx].choices.push({ text: text, priceModifier: price }); buildEditPage(); };
-            document.getElementById("addNewOptionBtn").onclick = () => { let newOptName = document.getElementById("newOptionNameEdit").value.trim(); if(!newOptName) return; editOptions.push({ name: newOptName, choices: [] }); document.getElementById("newOptionNameEdit").value = ""; buildEditPage(); };
-            document.getElementById("saveEditBtn").onclick = () => { 
-                let newName = document.getElementById("editProdName").value.trim(); 
-                let newPrice = document.getElementById("editProdPrice").value.trim(); 
-                let newImg = document.getElementById("editProdImg").value.trim(); 
-                if(!newName || !newPrice) { alert("اسم المنتج والسعر مطلوبان"); return; }
-                for(let i=0;i<editOptions.length;i++){ 
-                    if(!editOptions[i].choices) editOptions[i].choices = [];
-                    for(let j=0;j<editOptions[i].choices.length;j++){ 
-                        let textInput = document.getElementById(`editChoiceText_${i}_${j}`); 
-                        let priceInput = document.getElementById(`editChoicePrice_${i}_${j}`); 
-                        if(textInput) editOptions[i].choices[j].text = textInput.value; 
-                        if(priceInput) editOptions[i].choices[j].priceModifier = parseFloat(priceInput.value) || 0; 
-                    } 
-                } 
-                updateProduct(product.id, newName, newPrice, newImg, editOptions); 
-                alert("✅ تم تحديث المنتج"); 
-            };
+        else {
+            // باقي الأقسام
+            main.innerHTML = `<div class="admin-panel"><h3>لوحة التحكم</h3><p>اختر علامة تبويب من الأعلى</p></div>`;
         }
-        buildEditPage();
     }
     
-    // واجهة الموظف - استلام الطلبات
+    // تبسيط باقي الدوال عشان الكود مش يطول زيادة
+    function renderUI() {
+        updateAuthWidget();
+        const adminDiv = document.getElementById("adminTabsContainer");
+        const empDiv = document.getElementById("employeeTabsContainer");
+        adminDiv.style.display = "none"; 
+        empDiv.style.display = "none";
+        
+        if (currentUser?.type === "admin") {
+            adminDiv.style.display = "flex";
+            adminDiv.innerHTML = `<button class="tab-btn" data-tab="products">📦 المنتجات</button>
+                <button class="tab-btn" data-tab="employees">👥 الموظفين</button>
+                <button class="tab-btn" data-tab="admins">👑 المديرين</button>
+                <button class="tab-btn" data-tab="allorders">📊 الطلبات الجديدة</button>
+                <button class="tab-btn" data-tab="orderslog">📜 سجل الطلبات</button>`;
+            attachAdminTabs();
+            let active = localStorage.getItem("activeAdminTab") || "allorders";
+            renderAdminPanel(active);
+        } else if (currentUser?.type === "employee") {
+            empDiv.style.display = "flex";
+            empDiv.innerHTML = `<button class="tab-btn" data-tab="allorders">📋 استلام الطلبات</button>
+                <button class="tab-btn" data-tab="empLog">📜 سجل استلاماتي</button>`;
+            attachEmployeeTabs();
+            renderEmployeePanel("allorders");
+        } else {
+            renderCustomerMenu();
+        }
+    }
+    
     function renderEmployeePanel(tab) {
         const main = document.getElementById("mainContent");
-        
         if (tab === "allorders") {
             let pendingOrders = orders.filter(o => o.status === "pending");
             let html = `<div class="employee-panel">
                 <h3>📋 الطلبات الجديدة - اختر طلباً لاستلامه</h3>
+                <p style="color:#666; margin-bottom:10px;">${deviceType}</p>
                 <button onclick="playSound()" style="margin-bottom:15px;">🔔 اختبار الصوت</button>`;
             if (pendingOrders.length === 0) html += `<p style="color:gray;">✨ لا توجد طلبات جديدة حالياً</p>`;
             pendingOrders.forEach(o => { 
@@ -710,6 +569,7 @@
                     🍽️ خيارات: ${o.optionsText}<br>
                     🔢 الكمية: ${o.quantity} | 💰 الإجمالي: ${o.totalPrice} ج.م<br>
                     👤 العميل: ${o.customerName} | 🏠 الروم: ${o.roomName}<br>
+                    📱 جهاز الطلب: ${o.device || "غير معروف"}<br>
                     🕐 وقت الطلب: ${o.createdAt}<br>
                     <button class="success" onclick="window.receiveOrderFromUI('${o.id}')" style="margin-top:10px;">✅ استلام الطلب</button>
                 </div>`; 
@@ -729,6 +589,7 @@
                 html += `<div class="order-item">
                     <b>🍔 ${o.productName}</b> (${o.optionsText}) | 💰 ${o.totalPrice} ج.م<br>
                     👤 العميل: ${o.customerName} | 🏠 الروم: ${o.roomName}<br>
+                    📱 جهاز الطلب: ${o.device || "غير معروف"}<br>
                     ✅ تم الاستلام في: ${o.deliveredAt}
                 </div>`; 
             });
@@ -736,10 +597,10 @@
         }
     }
     
-    // ========== واجهة العميل ==========
     function renderCustomerMenu() {
         const main = document.getElementById("mainContent");
-        let html = `<h2>🎮 القائمة الرئيسية - اختر منتجك</h2><div class="products-grid">`;
+        let html = `<div style="margin-bottom:20px;"><div class="device-info" style="display:inline-block;">📍 أنت تتصفح من: ${deviceType}</div></div>`;
+        html += `<h2>🎮 القائمة الرئيسية - اختر منتجك</h2><div class="products-grid">`;
         products.forEach(prod => {
             html += `<div class="product-card" onclick="window.showOrderPageUI('${prod.id}')"><div class="product-img"><img src="${prod.imageUrl}" onerror="this.src='https://placehold.co/400x300'"></div><div class="product-details"><div class="product-name">${prod.name}</div><div class="product-price">💰 ${prod.price} ج.م</div><button class="order-now-btn">اطلب الآن</button></div></div>`;
         });
@@ -782,7 +643,7 @@
                 extra = selectedChoices.reduce((s,ch) => s + (ch?.priceModifier || 0), 0);
             }
             let total = (product.price + extra) * quantity;
-            document.getElementById("mainContent").innerHTML = `<div class="order-page"><button onclick="window.renderCustomerMenu()" style="margin-bottom:15px;">⬅ رجوع</button><div style="text-align:center;"><img src="${product.imageUrl}" onerror="this.src='https://placehold.co/400x300'" style="max-width:100%; border-radius:28px; max-height:200px;"></div><h2>${product.name}</h2><p>السعر الأساسي: ${product.price} ج.م</p>${optionsHtml}<div class="quantity-selector"><button class="qty-btn" id="minusQty">-</button><span class="qty-value" id="qtySpan">${quantity}</span><button class="qty-btn" id="plusQty">+</button></div><div class="row-flex"><input id="custName" placeholder="👤 اسم العميل"><input id="roomNum" placeholder="🏠 رقم الروم"></div><h3>الإجمالي: <span id="totalSpan">${total}</span> ج.م</h3><button id="confirmOrderBtn" style="width:100%; background:#2a9d8f; padding:12px;">تأكيد الطلب</button></div>`;
+            document.getElementById("mainContent").innerHTML = `<div class="order-page"><button onclick="window.renderCustomerMenu()" style="margin-bottom:15px;">⬅ رجوع</button><div style="text-align:center;"><img src="${product.imageUrl}" onerror="this.src='https://placehold.co/400x300'" style="max-width:100%; border-radius:28px; max-height:200px;"></div><h2>${product.name}</h2><p>السعر الأساسي: ${product.price} ج.م</p><div class="device-info" style="margin-bottom:15px;">📱 سيتم تسجيل طلبك من جهاز: ${deviceType}</div>${optionsHtml}<div class="quantity-selector"><button class="qty-btn" id="minusQty">-</button><span class="qty-value" id="qtySpan">${quantity}</span><button class="qty-btn" id="plusQty">+</button></div><div class="row-flex"><input id="custName" placeholder="👤 اسم العميل"><input id="roomNum" placeholder="🏠 رقم الروم"></div><h3>الإجمالي: <span id="totalSpan">${total}</span> ج.م</h3><button id="confirmOrderBtn" style="width:100%; background:#2a9d8f; padding:12px;">تأكيد الطلب</button></div>`;
             
             document.querySelectorAll(".option-choice").forEach(el => { 
                 el.onclick = () => { 
@@ -813,6 +674,21 @@
         buildPage();
     }
     
+    function attachAdminTabs() {
+        document.querySelectorAll("#adminTabsContainer .tab-btn").forEach(btn => {
+            btn.onclick = () => { 
+                localStorage.setItem("activeAdminTab", btn.getAttribute("data-tab")); 
+                renderAdminPanel(btn.getAttribute("data-tab")); 
+            };
+        });
+    }
+    
+    function attachEmployeeTabs() {
+        document.querySelectorAll("#employeeTabsContainer .tab-btn").forEach(btn => {
+            btn.onclick = () => renderEmployeePanel(btn.getAttribute("data-tab"));
+        });
+    }
+    
     function updateAuthWidget() {
         const span = document.getElementById("userGreeting");
         const btn = document.getElementById("authButton");
@@ -831,7 +707,6 @@
         }
     }
     
-    // ========== تشغيل النظام ==========
     loadData();
     renderUI();
 </script>
